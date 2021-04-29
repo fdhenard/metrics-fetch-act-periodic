@@ -71,10 +71,6 @@
   (far/scan DYNAMO_CLIENT_OPTS
             :well-gas)
 
-  (java.util.UUID/randomUUID)
-
-  (str (time/instant))
-
   (far/put-item
    DYNAMO_CLIENT_OPTS
    :well-gas
@@ -85,23 +81,8 @@
 
   )
 
-(defn list-tables []
-  (far/list-tables DYNAMO_CLIENT_OPTS))
-
-
 (defn add-metrics! [metrics]
   (far/put-item
    DYNAMO_CLIENT_OPTS
    :well-gas
    metrics))
-
-#_(holy-lambda/deflambda MetricFetchHandle
-  [request]
-  (println request)
-  (hl-resp/json {:message "Hello"
-            "it's" "me"
-            :you "looking"
-            :for true}))
-
-#_(holy-lambda/gen-main
- [#'MetricFetchHandle])
