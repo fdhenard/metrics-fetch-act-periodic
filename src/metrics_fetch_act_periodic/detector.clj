@@ -129,6 +129,9 @@
 (spec/def ::BodyMap (spec/keys :req-un [::result
                                         ::coreInfo]))
 
+(defn analog-metric->proportion [{:keys [reading-of-4096]}]
+  (/ reading-of-4096 4096.0))
+
 (defn get-all-metrics []
   (let [{:keys [status body] :as resp} (particle-get "allmetricsjson")
         _ (when-not (= 200 status)
@@ -139,13 +142,20 @@
             (throw
              (ex-info "invalid body map"
                       {:explain-data (spec/explain-data ::BodyMap body-map)})))
-        result-map (cheshire/parse-string result true)
+        {:keys [heater methane] :as result-map}
+        (cheshire/parse-string result true)
         _ (when-not (spec/valid? ::mfap-spec/Metrics result-map)
             (throw
              (ex-info
               "invalid metrics result"
               {:explain-data
-               (spec/explain-data ::mfap-spec/Metrics result-map)})))]
+               (spec/explain-data ::mfap-spec/Metrics result-map)})))
+        result-map
+        (-> result-map
+            (assoc-in [:heater :proportion]
+                      (analog-metric->proportion heater))
+            (assoc-in [:methane :proportion]
+                      (analog-metric->proportion methane)))]
     (merge
      result-map
      {:uuid (str (java.util.UUID/randomUUID))
