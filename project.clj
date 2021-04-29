@@ -11,9 +11,14 @@
                  [cprop "0.1.17"]
 
                  [org.martinklepsch/clj-http-lite "0.4.3"]
-                 [org.clojure/data.json "2.2.2"]
+
+                 [cheshire "5.10.0"]
 
                  [clojure.java-time "0.3.2"]
+
+                 [com.amazonaws/aws-lambda-java-core "1.2.1"]
+                 [com.amazonaws/aws-java-sdk-dynamodb "1.11.1007"]
                  ]
-  :repl-options {:init-ns metrics-fetch-act-periodic.core})
+  :repl-options {:init-ns metrics-fetch-act-periodic.core}
+  :profiles {:uberjar {:aot :all}})
 

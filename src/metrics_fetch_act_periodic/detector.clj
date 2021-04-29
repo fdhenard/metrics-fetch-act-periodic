@@ -1,7 +1,7 @@
 (ns metrics-fetch-act-periodic.detector
   (:require [clojure.spec.alpha :as spec]
-            [clojure.data.json :as json]
             [java-time :as time]
+            [cheshire.core :as cheshire]
             [clj-http.lite.client :as client]
             [metrics-fetch-act-periodic.config :as config]
             [metrics-fetch-act-periodic.spec.core :as mfap-spec]))
@@ -22,7 +22,7 @@
     post-res))
 
 (defn resp->resp-body-map [{:keys [body] :as resp}]
-  (let [body-map (json/read-str body :key-fn keyword)
+  (let [body-map (cheshire/parse-string body true)
         new-res (-> resp
                     (assoc :body-map body-map)
                     (dissoc :body))]
@@ -88,7 +88,7 @@
   (let [result (get-in get-resp [:body-map :result])]
     (-> get-resp
         (assoc-in [:body-map :result-map]
-                  (json/read-str result :key-fn keyword))
+                  (cheshire/parse-string result true))
         (update-in [:body-map] dissoc :result))))
 
 (comment
@@ -134,12 +134,12 @@
         _ (when-not (= 200 status)
             (throw (ex-info "status not 200" {:response resp})))
         {:keys [result coreInfo] :as body-map}
-        (json/read-str body :key-fn keyword)
+        (cheshire/parse-string body true)
         _ (when-not (spec/valid? ::BodyMap body-map)
             (throw
              (ex-info "invalid body map"
                       {:explain-data (spec/explain-data ::BodyMap body-map)})))
-        result-map (json/read-str result :key-fn keyword)
+        result-map (cheshire/parse-string result true)
         _ (when-not (spec/valid? ::mfap-spec/Metrics result-map)
             (throw
              (ex-info

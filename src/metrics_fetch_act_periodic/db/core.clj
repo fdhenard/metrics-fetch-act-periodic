@@ -1,16 +1,46 @@
 (ns metrics-fetch-act-periodic.db.core
-  (:require [java-time :as time]
+  (:require [clojure.pprint :as pp]
+            [clojure.string :as string]
+            [java-time :as time]
             [taoensso.faraday :as far]
-            [metrics-fetch-act-periodic.config :as config]))
+            [metrics-fetch-act-periodic.config :as config])
+  (:import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
+           com.amazonaws.client.builder.AwsClientBuilder$EndpointConfiguration
+           [com.amazonaws.auth
+            BasicAWSCredentials
+            AWSStaticCredentialsProvider]))
 
 
 (def DYNAMO_CLIENT_OPTS
-  (let [{:keys [access-key
-                secret-key
-                uri]} (:db-opts config/config)]
-    {:access-key access-key
-     :secret-key secret-key
-     :endpoint uri}))
+  (let [{:keys [uri]} (:db-opts config/config)
+        {:keys [aws-access-key-id
+                aws-secret-access-key
+                aws-region]} config/config
+        res (if-not (config/is-running-local?)
+              {:client (AmazonDynamoDBClientBuilder/defaultClient)}
+              (let [creds (BasicAWSCredentials.
+                           aws-access-key-id
+                           aws-secret-access-key)
+                    creds-provider (AWSStaticCredentialsProvider. creds)
+                    client-builder
+                    (cond-> (.. (AmazonDynamoDBClientBuilder/standard)
+                                (withCredentials creds-provider))
+                      aws-region
+                      (.withRegion aws-region)
+                      (and aws-region uri)
+                      (.withEndpointConfiguration
+                       (AwsClientBuilder$EndpointConfiguration.
+                        uri
+                        aws-region)))]
+                {:client (.build client-builder)}))
+        #_ (pp/pprint {:dynamo-conn-stuff
+                      {:len-access-key (and aws-access-key-id
+                                            (count aws-access-key-id))
+                       :len-secret-key (and aws-secret-access-key
+                                            (count aws-secret-access-key))
+                       :aws-region aws-region
+                       #_#_:config-keys (keys config/config)}})]
+    res))
 
 (comment
 
