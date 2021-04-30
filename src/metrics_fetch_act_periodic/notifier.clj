@@ -3,31 +3,77 @@
             [clojure.string :as string]
             [clojure.stacktrace :as st]
             [postal.core :as postal]
-            [metrics-fetch-act-periodic.config :as config]))
+            [metrics-fetch-act-periodic.config :as config])
+  (:import [com.amazonaws.services.simpleemail
+            AmazonSimpleEmailServiceClientBuilder]
+           [com.amazonaws.services.simpleemail.model Body Content
+            Destination Message SendEmailRequest]))
 
 
-(def opts {:user (:aws-ses-smpt-username config/config)
-           :pass (:aws-ses-smpt-password config/config)
-           :host (str "email-smtp." (:aws-region config/config)
-                      ".amazonaws.com")
-           ;; :port 587
-           :port 25})
+(def postal-opts {:user (:aws-ses-smpt-username config/config)
+                  :pass (:aws-ses-smpt-password config/config)
+                  :host (str "email-smtp." (:aws-region config/config)
+                             ".amazonaws.com")
+                  ;; :port 587
+                  :port 25})
 
-(defn parse-emails [addrs-str]
+(def ses-client
+  (when-not (config/is-running-local?)
+    (AmazonSimpleEmailServiceClientBuilder/defaultClient)))
+
+(defn parse-email-addrs [addrs-str]
   (->> (string/split addrs-str #",")
        (map string/trim)))
 
 (def NOTIFY_CONFIG (:notify config/config))
 (def FROM (str "<" (:from NOTIFY_CONFIG) "> Well Gas Detection System"))
-(def ADMINS (parse-emails (:admins NOTIFY_CONFIG)))
-(def USERS (parse-emails (:users NOTIFY_CONFIG)))
+(def ADMINS (parse-email-addrs (:admins NOTIFY_CONFIG)))
+(def USERS (parse-email-addrs (:users NOTIFY_CONFIG)))
+
+(defn send-via-postal [{:keys [subject body] :as msg-in}]
+  (let [{:keys [error] :as res}
+        (postal/send-message
+               postal-opts
+               (merge msg-in
+                      {:from FROM
+                       :subject subject
+                       :body [{:type "text/html"
+                               :content body}]}))]
+    {:success? (= :SUCCESS error)
+     :library :postal
+     :library-result res}))
+
+(defn send-via-ses-sdk [{:keys [subject to body] :as _msg-in}]
+  (let [mail-req
+        (.. (SendEmailRequest.)
+            (withSource FROM)
+            (withDestination
+             (.. (Destination.)
+                 (withToAddresses
+                  (string/join "," to))))
+            (withMessage
+             (.. (Message.)
+                 (withSubject
+                  (.. (Content.)
+                      (withCharset "UTF-8")
+                      (withData subject)))
+                 (withBody
+                  (.. (Body.)
+                      (withHtml
+                       (.. (Content.)
+                           (withCharset "UTF-8")
+                           (withData body))))))))
+        _ (.sendEmail ses-client mail-req)]
+    {:success? true
+     :library :aws-ses-sdk
+     :library-result nil}))
 
 (defn send-message [{:keys [subject] :as msg-in}]
-  (postal/send-message
-   opts
-   (merge msg-in
-          {:from FROM
-           :subject (str "[Well Gas Detection System] " subject)})))
+  (let [subject (str "[Well Gas Detection System] " subject)
+        msg (assoc msg-in :subject subject)]
+    (if (config/is-running-local?)
+      (send-via-postal msg)
+      (send-via-ses-sdk msg))))
 
 (comment
 
@@ -50,9 +96,6 @@
        #_(< heater-proportion ??some-value??)
        #_(> heater-proportion ??some-value??)
        (:high? danger))))
-
-(defn sent-success? [{:keys [result] :as _notification-result}]
-  (= :SUCCESS (:error result)))
 
 (defn code-string->html [code-str]
   (-> code-str
@@ -80,9 +123,7 @@
       {:triggered true
        :result (send-message {:to USERS
                               :subject "Warning Triggered"
-                              :body
-                              [{:type "text/html"
-                                :content body}]})})))
+                              :body body})})))
 
 
 (defn send-error! [world error]
@@ -98,5 +139,4 @@
           "world = <br><br><code>"  world-html "</code>"])]
     (send-message {:to ADMINS
                    :subject "Warning Triggered"
-                   :body [{:type "text/html"
-                           :content body}]})))
+                   :body body})))
