@@ -95,6 +95,11 @@
           (= heater-proportion 0.0)
           (:high? danger))))
 
+(defn triggered-and-failed? [{:keys [notifier] :as _world}]
+  (let [{:keys [result triggered?]} notifier]
+   (and triggered?
+        (false? (:success? result)))))
+
 (defn code-string->html [code-str]
   (-> code-str
       (string/replace #"\n" "<br>")
@@ -103,7 +108,7 @@
 
 (defn process-notification! [{:keys [detector] :as _world}]
   (if-not (should-notify? detector)
-    {:triggered false
+    {:triggered? false
      :result nil}
     (let [world-as-html (-> (with-out-str (pp/pprint _world))
                             code-string->html)
@@ -118,7 +123,7 @@
             "- danger? is true<br><br>"
             "Detector Data:<br><br><code>" world-as-html
             "</code>"])]
-      {:triggered true
+      {:triggered? true
        :result (send-message {:to USERS
                               :subject "Warning Triggered"
                               :body body})})))

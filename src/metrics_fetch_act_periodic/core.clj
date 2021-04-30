@@ -16,10 +16,9 @@
          [:persist db/persist!])
         error (first errors)
         _ (when error
-            (when (get-in world [:notifier :success?])
+            (when-not (notifier/triggered-and-failed? world)
               (notifier/send-error! world error))
-            (throw error))
-        #_ (log/info (with-out-str (pp/pprint {:insert-res insert-res})))]
+            (throw error))]
     world))
 
 
