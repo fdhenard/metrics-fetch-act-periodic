@@ -8,6 +8,7 @@
 
 
 (defn -handleRequest [_ _input-stream output-stream _context]
-  (let [_ (core/do-the-deed!)]
+  (let [world (core/do-the-deed!)]
     (with-open [writer (io/writer output-stream)]
-      (cheshire/generate-stream {:success true} writer))))
+      (cheshire/generate-stream {:success true
+                                 :world world} writer))))
