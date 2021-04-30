@@ -18,6 +18,8 @@
 
                  [com.amazonaws/aws-lambda-java-core "1.2.1"]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.11.1007"]
+
+                 [com.draines/postal "2.0.4"]
                  ]
   :repl-options {:init-ns metrics-fetch-act-periodic.core}
   :profiles {:uberjar {:aot :all}})
