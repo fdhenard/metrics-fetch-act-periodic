@@ -12,10 +12,14 @@
                       ".amazonaws.com")
            :port 587})
 
+(defn parse-emails [addrs-str]
+  (->> (string/split addrs-str #",")
+       (map string/trim)))
+
 (def NOTIFY_CONFIG (:notify config/config))
 (def FROM (str "<" (:from NOTIFY_CONFIG) "> Well Gas Detection System"))
-(def ADMINS (:admins NOTIFY_CONFIG))
-(def USERS (:users NOTIFY_CONFIG))
+(def ADMINS (parse-emails (:admins NOTIFY_CONFIG)))
+(def USERS (parse-emails (:users NOTIFY_CONFIG)))
 
 (defn send-message [{:keys [subject] :as msg-in}]
   (postal/send-message
