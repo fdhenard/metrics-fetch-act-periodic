@@ -6,11 +6,12 @@
             [metrics-fetch-act-periodic.config :as config]))
 
 
-(def opts {:user (:aws-access-key-id config/config)
-           :pass (:aws-secret-access-key config/config)
+(def opts {:user (:aws-ses-smpt-username config/config)
+           :pass (:aws-ses-smpt-password config/config)
            :host (str "email-smtp." (:aws-region config/config)
                       ".amazonaws.com")
-           :port 587})
+           ;; :port 587
+           :port 25})
 
 (defn parse-emails [addrs-str]
   (->> (string/split addrs-str #",")
@@ -23,12 +24,16 @@
 
 (defn send-message [{:keys [subject] :as msg-in}]
   (postal/send-message
+   opts
    (merge msg-in
           {:from FROM
            :subject (str "[Well Gas Detection System] " subject)})))
 
 (comment
 
+
+  config/config
+  
   (send-message {:to ADMINS
                  :subject "testing 1 2"
                  :body "testing"})
@@ -46,34 +51,52 @@
        #_(> heater-proportion ??some-value??)
        (:high? danger))))
 
+(defn sent-success? [{:keys [result] :as _notification-result}]
+  (= :SUCCESS (:error result)))
+
+(defn code-string->html [code-str]
+  (-> code-str
+      (string/replace #"\n" "<br>")
+      (string/replace #" " "&nbsp;")))
+
 
 (defn process-notification! [{:keys [detector] :as _world}]
   (if-not (should-notify? detector)
     {:triggered false
      :result nil}
-    (let [body
+    (let [world-as-html (-> (with-out-str (pp/pprint _world))
+                            code-string->html)
+          body
           (string/join
            " "
            ["It has been determined that you should be notified"
-            "because the well gas detector has reached a threshold.\n\n"
-            "One of the following are true:\n\n"
-            "- explosive gas > " METHANE_THRESHOLD " proportion\n"
-            "- ????? > heater-proportion > ?????\n"
-            "- danger? is true\n\n"
-            "Detector Data:\n\n" (with-out-str (pp/pprint _world))])]
+            "because the well gas detector has reached a threshold<br><br>"
+            "One or more of the following are true:<br><br>"
+            "- explosive-gas-proportion > " METHANE_THRESHOLD "<br>"
+            "- ????? > heater-proportion > ?????<br>"
+            "- danger? is true<br><br>"
+            "Detector Data:<br><br><code>" world-as-html
+            "</code>"])]
       {:triggered true
        :result (send-message {:to USERS
                               :subject "Warning Triggered"
-                              :body body})})))
+                              :body
+                              [{:type "text/html"
+                                :content body}]})})))
 
 
 (defn send-error! [world error]
-  (let [body
+  (let [stack-trace-html (-> (with-out-str (st/print-stack-trace error))
+                             code-string->html)
+        world-html (-> (with-out-str (pp/pprint world))
+                       code-string->html)
+        body
         (string/join
          " "
-         ["An error occurred\n\n"
-          "error = \n\n" (with-out-str (st/print-stack-trace error))
-          "world = \n\n" (with-out-str (pp/pprint world)) "\n\n"])]
+         ["An error occurred<br><br>"
+          "error = <br><br><code>" stack-trace-html "</code>"
+          "world = <br><br><code>"  world-html "</code>"])]
     (send-message {:to ADMINS
                    :subject "Warning Triggered"
-                   :body body})))
+                   :body [{:type "text/html"
+                           :content body}]})))

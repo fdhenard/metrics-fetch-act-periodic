@@ -13,10 +13,11 @@
          {}
          [:detector detector/fetch-metrics]
          [:notifier notifier/process-notification!]
-         [:db db/persist!])
+         [:persist db/persist!])
         error (first errors)
         _ (when error
-            (notifier/send-error! world error)
+            (when (notifier/sent-success? (:notifier world))
+              (notifier/send-error! world error))
             (throw error))
         #_ (log/info (with-out-str (pp/pprint {:insert-res insert-res})))]
     world))
