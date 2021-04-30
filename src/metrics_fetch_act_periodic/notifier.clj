@@ -49,8 +49,7 @@
             (withSource FROM)
             (withDestination
              (.. (Destination.)
-                 (withToAddresses
-                  (string/join "," to))))
+                 (withToAddresses to)))
             (withMessage
              (.. (Message.)
                  (withSubject
