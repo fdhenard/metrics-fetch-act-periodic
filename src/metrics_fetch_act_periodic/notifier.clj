@@ -91,10 +91,9 @@
 (defn should-notify? [{:keys [heater methane danger] :as _detector}]
   true
   #_(let [heater-proportion (:proportion heater)]
-   (or (> (:proportion methane) METHANE_THRESHOLD)
-       #_(< heater-proportion ??some-value??)
-       #_(> heater-proportion ??some-value??)
-       (:high? danger))))
+      (or (> (:proportion methane) METHANE_THRESHOLD)
+          (= heater-proportion 0.0)
+          (:high? danger))))
 
 (defn code-string->html [code-str]
   (-> code-str
@@ -115,7 +114,7 @@
             "because the well gas detector has reached a threshold<br><br>"
             "One or more of the following are true:<br><br>"
             "- explosive-gas-proportion > " METHANE_THRESHOLD "<br>"
-            "- ????? > heater-proportion > ?????<br>"
+            "- heater-proportion == 0<br>"
             "- danger? is true<br><br>"
             "Detector Data:<br><br><code>" world-as-html
             "</code>"])]
