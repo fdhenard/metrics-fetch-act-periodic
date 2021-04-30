@@ -132,7 +132,7 @@
 (defn analog-metric->proportion [{:keys [reading-of-4096]}]
   (/ reading-of-4096 4096.0))
 
-(defn get-all-metrics []
+(defn fetch-metrics [_world]
   (let [{:keys [status body] :as resp} (particle-get "allmetricsjson")
         _ (when-not (= 200 status)
             (throw (ex-info "status not 200" {:response resp})))
@@ -167,6 +167,6 @@
 
 (comment
 
-  (get-all-metrics)
+  (fetch-metrics {})
 
   )

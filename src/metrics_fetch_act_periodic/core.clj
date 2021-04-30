@@ -2,13 +2,24 @@
   (:require [clojure.pprint :as pp]
             [taoensso.timbre :as log]
             [metrics-fetch-act-periodic.db.core :as db]
-            [metrics-fetch-act-periodic.detector :as detector]))
+            [metrics-fetch-act-periodic.detector :as detector]
+            [metrics-fetch-act-periodic.notifier :as notifier]
+            [metrics-fetch-act-periodic.utils.railway :as railway]))
 
 
 (defn do-the-deed! []
-  (let [detector-res (detector/get-all-metrics)
-        _insert-res (db/add-metrics! detector-res)
-        #_ (log/info (with-out-str (pp/pprint {:insert-res insert-res})))]))
+  (let [[world errors]
+        (railway/==>
+         {}
+         [:detector detector/fetch-metrics]
+         [:notifier notifier/process-notification!]
+         [:db db/persist!])
+        error (first errors)
+        _ (when error
+            (notifier/send-error! world error)
+            (throw error))
+        #_ (log/info (with-out-str (pp/pprint {:insert-res insert-res})))]
+    world))
 
 
 (comment

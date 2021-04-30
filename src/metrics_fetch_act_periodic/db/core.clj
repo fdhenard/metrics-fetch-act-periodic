@@ -86,3 +86,9 @@
    DYNAMO_CLIENT_OPTS
    :well-gas
    metrics))
+
+
+(defn persist! [{:keys [detector notifier]}]
+  (let [to-persist (assoc detector :notification-result notifier)
+        _ (add-metrics! to-persist)]
+    {:success true}))
