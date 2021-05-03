@@ -122,11 +122,17 @@
             "- heater-proportion == 0<br>"
             "- danger? is true<br><br>"
             "Detector Data:<br><br><code>" world-as-html
-            "</code>"])]
+            "</code>"])
+          send-res (try
+                     (send-message {:to USERS
+                                    :subject "Warning Triggered"
+                                    :body body})
+                     (catch Throwable exc
+                       {:success? false
+                        :error-message (.getMessage exc)
+                        :stack-trace-str (with-out-str (st/print-stack-trace exc))}))]
       {:triggered? true
-       :result (send-message {:to USERS
-                              :subject "Warning Triggered"
-                              :body body})})))
+       :result send-res})))
 
 
 (defn send-error! [world error]
