@@ -89,11 +89,10 @@
 (def METHANE_THRESHOLD 0.04)
 
 (defn should-notify? [{:keys [heater methane danger] :as _detector}]
-  true
-  #_(let [heater-proportion (:proportion heater)]
-      (or (> (:proportion methane) METHANE_THRESHOLD)
-          (= heater-proportion 0.0)
-          (:high? danger))))
+  (let [heater-proportion (:proportion heater)]
+    (or (> (:proportion methane) METHANE_THRESHOLD)
+        (= heater-proportion 0.0)
+        (:high? danger))))
 
 (defn triggered-and-failed? [{:keys [notifier] :as _world}]
   (let [{:keys [result triggered?]} notifier]
