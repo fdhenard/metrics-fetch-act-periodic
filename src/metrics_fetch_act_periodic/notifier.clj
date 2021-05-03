@@ -92,7 +92,7 @@
   (let [heater-proportion (:proportion heater)]
     (or (> (:proportion methane) METHANE_THRESHOLD)
         (= heater-proportion 0.0)
-        (:high? danger))))
+        (:is-high? danger))))
 
 (defn triggered-and-failed? [{:keys [notifier] :as _world}]
   (let [{:keys [result triggered?]} notifier]
@@ -111,6 +111,7 @@
      :result nil}
     (let [world-as-html (-> (with-out-str (pp/pprint _world))
                             code-string->html)
+          {:keys [heater methane danger]} detector
           body
           (string/join
            " "
@@ -120,6 +121,10 @@
             "- explosive-gas-proportion > " METHANE_THRESHOLD "<br>"
             "- heater-proportion == 0<br>"
             "- danger? is true<br><br>"
+            "Actual Values:<br><br>"
+            "- explosive-gas-proportion = " (:proportion methane) "<br>"
+            "- heater-proportion = " (:proportion heater) "<br>"
+            "- danger? = " (:is-high? danger) "<br><br>"
             "Detector Data:<br><br><code>" world-as-html
             "</code>"])
           send-res (try
