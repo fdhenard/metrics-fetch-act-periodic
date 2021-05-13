@@ -86,11 +86,14 @@
 
   )
 
-(def METHANE_THRESHOLD 0.04)
+(def METHANE_THRESHOLD
+  (when-let [methn-thresh-pct (:methane-threshold-percent NOTIFY_CONFIG)]
+    (/ methn-thresh-pct 100.0)))
 
 (defn should-notify? [{:keys [heater methane danger] :as _detector}]
-  (let [heater-proportion (:proportion heater)]
-    (or (> (:proportion methane) METHANE_THRESHOLD)
+  (let [heater-proportion (:proportion heater)
+        methane-proportion (:proportion methane)]
+    (or (> methane-proportion METHANE_THRESHOLD)
         (= heater-proportion 0.0)
         (:is-high? danger))))
 
@@ -151,5 +154,5 @@
           "error = <br><br><code>" stack-trace-html "</code>"
           "world = <br><br><code>"  world-html "</code>"])]
     (send-message {:to ADMINS
-                   :subject "Warning Triggered"
+                   :subject "Error"
                    :body body})))
