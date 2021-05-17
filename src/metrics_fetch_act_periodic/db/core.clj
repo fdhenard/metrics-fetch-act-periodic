@@ -92,3 +92,34 @@
   (let [to-persist (assoc detector :notification-result notifier)
         _ (add-metrics! to-persist)]
     {:success true}))
+
+
+
+
+(comment
+
+  (def results
+    (far/scan
+     DYNAMO_CLIENT_OPTS
+     :well-gas
+     {:filter-expr
+      (string/join " "
+                   ["#datetime > :lastdate"
+                    "and"
+                    "#notifyres.#triggered = :triggered"
+                    "and"
+                    "#notifyres.#result.#success = :success"])
+      :expr-attr-vals {":triggered" true
+                       ":success" true
+                       ":lastdate" "2021-05-15"}
+      :expr-attr-names {"#datetime" "datetime"
+                        "#notifyres" "notification-result"
+                        "#triggered" "triggered?"
+                        "#result" "result"
+                        "#success" "success?"}}))
+  (->> results
+       (map #(select-keys % [:datetime])))
+
+
+
+  )
