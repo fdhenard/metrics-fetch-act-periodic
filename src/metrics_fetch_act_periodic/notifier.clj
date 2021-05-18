@@ -95,7 +95,8 @@
         methane-proportion (:proportion methane)]
     (or (> methane-proportion METHANE_THRESHOLD)
         (= heater-proportion 0.0)
-        (:is-high? danger))))
+        ;; F. Henard 5/17/21 ignoring danger for now by Dad's request
+        #_(:is-high? danger))))
 
 (defn triggered-and-failed? [{:keys [notifier] :as _world}]
   (let [{:keys [result triggered?]} notifier]
@@ -123,7 +124,8 @@
             "One or more of the following are true:<br><br>"
             "- explosive-gas-proportion > " METHANE_THRESHOLD "<br>"
             "- heater-proportion == 0<br>"
-            "- danger? is true<br><br>"
+            ;; F. Henard 5/17/21 ignoring danger by Dad's request
+            ;; "- danger? is true<br><br>"
             "Actual Values:<br><br>"
             "- explosive-gas-proportion = " (:proportion methane) "<br>"
             "- heater-proportion = " (:proportion heater) "<br>"
