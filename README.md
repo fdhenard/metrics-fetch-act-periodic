@@ -2,13 +2,24 @@
 
 A Clojure library designed to ... well, that part is up to you.
 
+[toc]
+
 ## Usage
 
-FIXME
+### deploy
+
+- create uberjar
+
+    ```bash
+    cd ~/dev/repos/metrics-fetch-act-periodic
+    lein do clean, uberjar
+    ```
+
+- upload on AWS Lambda
 
 ## License
 
-Copyright © 2021 FIXME
+Copyright © 2021 Frank Henard - Eclipse like Clojure
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
