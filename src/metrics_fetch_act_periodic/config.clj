@@ -6,8 +6,11 @@
             [cprop.core :as cprop]))
 
 
-(def config-dir-path (string/join "/" [(System/getProperty "user.home")
-                                       "dev" "dev-local-config-files"]))
+(def config-dir-path
+  (string/join "/" [(System/getProperty "user.home")
+                    "Dropbox"
+                    "dev"
+                    "dev-local-config"]))
 
 
 (def ^java.io.File dev-local-config-file
